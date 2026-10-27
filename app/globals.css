@@ -189,3 +189,55 @@ ol {
   text-align: center;
   color: var(--muted);
 }
+
+.score-value {
+  color: #111;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.score-lost,
+.team-lost {
+  opacity: 0.5;
+}
+
+.act {
+  text-align: right;
+}
+
+.btn.gold {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.badge-live {
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.bar {
+  flex: 1;
+  height: 4px;
+  background: #eee;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}

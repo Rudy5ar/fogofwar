@@ -6,6 +6,7 @@ import {
   buildDay,
   dayKey,
   todayKey,
+  type DayMatch,
 } from "@/lib/spoiler";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
 import { Icon } from "./Icon";
@@ -39,6 +40,7 @@ export function SpoilerApp() {
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [matches, setMatches] = useState<Load<Match[]>>({ status: "loading" });
   const [day, setDay] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
   // TODO: let people pick their own zone
   const tz = "Europe/Belgrade";
 
@@ -102,11 +104,21 @@ export function SpoilerApp() {
     [tournament, tz],
   );
 
-  const view = useMemo(() => (all && day ? buildDay(all, day, tz) : null), [all, day, tz]);
+  const toggleReveal = (id: string) => {
+    setRevealed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const view = useMemo(() => (all && day ? buildDay(all, day, revealed, tz) : null), [all, day, revealed, tz]);
 
   const error = tournaments.status === "error" ? tournaments.message : matches.status === "error" ? matches.message : null;
   const today = todayKey(tz);
   const nextDay = view?.nextDay && view.nextDay <= today ? view.nextDay : null;
+  const revealedCount = view?.matches.filter((m) => m.revealed).length ?? 0;
   const blocks = view ? [...new Set(view.matches.map((m) => m.block))] : [];
 
   const tournamentSelect = tournament && (
@@ -186,9 +198,20 @@ export function SpoilerApp() {
                 <p className="empty">No matches on this day.</p>
               ) : (
                 <>
+                  <div className="progress">
+                    <span>
+                      <b>
+                        {revealedCount} of {view.matches.length}
+                      </b>{" "}
+                      results revealed
+                    </span>
+                    <span className="bar" aria-hidden="true">
+                      <i style={{ width: `${(revealedCount / view.matches.length) * 100}%` }} />
+                    </span>
+                  </div>
                   <ol className="matches">
                     {view.matches.map((m) => (
-                      <MatchRow key={m.id} m={m} tz={tz} />
+                      <MatchRow key={m.id} m={m} tz={tz} onToggle={() => toggleReveal(m.id)} />
                     ))}
                   </ol>
                 </>
@@ -207,11 +230,12 @@ function Logo({ team, size }: { team: Team | null; size: number }) {
   return <img className="logo" src={team.image} alt="" width={size} height={size} loading="lazy" />;
 }
 
-function MatchRow({ m, tz }: { m: Match; tz: string }) {
+function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () => void }) {
   const side = (i: 0 | 1) => {
     const t = m.teams[i];
+    const lost = m.revealed && m.result?.winner !== i;
     return (
-      <div className={`team${i === 1 ? " team-r" : ""}`}>
+      <div className={`team${i === 1 ? " team-r" : ""}${lost ? " team-lost" : ""}`}>
         <Logo team={t} size={40} />
         <div className="team-text">
           <span className="team-name">{t ? t.name : "TBD"}</span>
@@ -222,7 +246,7 @@ function MatchRow({ m, tz }: { m: Match; tz: string }) {
   };
 
   return (
-    <li className="match">
+    <li className={`match${m.revealed ? " match-revealed" : ""}`}>
       <div className="meta">
         <span className="meta-time">
           {time(m.start, tz)}
@@ -231,9 +255,35 @@ function MatchRow({ m, tz }: { m: Match; tz: string }) {
       </div>
       {side(0)}
       <div className="score">
-        <span className="score-locked">vs</span>
+        {m.revealed && m.result ? (
+          <span className="score-value" aria-label={`${m.result.wins[0]} to ${m.result.wins[1]}`}>
+            <span className={m.result.winner === 0 ? "" : "score-lost"}>{m.result.wins[0]}</span>
+            <span className="score-dash">–</span>
+            <span className={m.result.winner === 1 ? "" : "score-lost"}>{m.result.wins[1]}</span>
+          </span>
+        ) : (
+          <span className="score-locked">
+            <Icon name="lock" size={14} />
+            vs
+          </span>
+        )}
       </div>
       {side(1)}
+      <div className="act">
+        {m.state === "inProgress" ? (
+          <span className="badge-live">Live</span>
+        ) : m.state === "unstarted" ? (
+          <span className="hint">Not played yet</span>
+        ) : m.revealed ? (
+          <button type="button" className="btn ghost" onClick={onToggle}>
+            Hide result
+          </button>
+        ) : (
+          <button type="button" className="btn gold" onClick={onToggle}>
+            Show result
+          </button>
+        )}
+      </div>
     </li>
   );
 }

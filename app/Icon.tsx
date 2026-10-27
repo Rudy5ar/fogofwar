@@ -1,4 +1,5 @@
 const PATHS = {
+  lock: "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z",
   "chevron-left": "m15 6-6 6 6 6",
   "chevron-right": "m9 6 6 6-6 6",
   "chevron-down": "m6 9 6 6 6-6",

@@ -21,19 +21,24 @@ export function todayKey(tz: string) {
   return dayKey(new Date(), tz);
 }
 
+export type DayMatch = Match & {
+  revealed: boolean;
+};
+
 export type DayView = {
-  matches: Match[];
+  matches: DayMatch[];
   prevDay: string | null;
   nextDay: string | null;
   firstDay: string | null;
 };
 
-export function buildDay(all: Match[], day: string, tz: string): DayView {
+export function buildDay(all: Match[], day: string, revealed: Set<string>, tz: string): DayView {
   const days = [...new Set(all.map((m) => dayKey(m.start, tz)))].sort();
   const todays = all.filter((m) => dayKey(m.start, tz) === day);
+  const matches: DayMatch[] = todays.map((m) => ({ ...m, revealed: m.state === "completed" && revealed.has(m.id) }));
 
   return {
-    matches: todays,
+    matches,
     prevDay: days.filter((d) => d < day).at(-1) ?? null,
     nextDay: days.find((d) => d > day) ?? null,
     firstDay: days[0] ?? null,
