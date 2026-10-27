@@ -15,3 +15,177 @@ body {
   background: #fafafa;
 }
 
+h1,
+p,
+ol {
+  margin: 0;
+}
+
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.top {
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.top-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 24px;
+}
+
+.mark {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.tab[aria-current="page"] {
+  background: #eee;
+  font-weight: 600;
+}
+
+.main {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.day-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.day-head h1 {
+  font-size: 22px;
+}
+
+.day-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.step {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.matches {
+  display: grid;
+  gap: 8px;
+}
+
+.match {
+  display: grid;
+  grid-template-columns: 70px 1fr 80px 1fr 120px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  color: var(--muted);
+}
+
+.meta-time {
+  color: #111;
+  font-weight: 600;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-r {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.team-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-code {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.logo {
+  object-fit: contain;
+}
+
+.logo-tbd {
+  display: inline-block;
+  border-radius: 50%;
+  background: #eee;
+}
+
+.score {
+  text-align: center;
+  color: var(--muted);
+}
