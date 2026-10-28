@@ -9,6 +9,7 @@ import {
   todayKey,
   type DayMatch,
 } from "@/lib/spoiler";
+import { store } from "@/lib/storage";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
 import { Icon } from "./Icon";
 
@@ -30,13 +31,15 @@ const time = (iso: string, tz: string) =>
 
 function pickDay(t: Tournament, matches: Match[], tz: string) {
   const today = todayKey(tz);
+  const saved = store.day(t.id);
+  if (saved && saved <= today) return saved;
   // Ongoing: start from today. Finished: start at the beginning so nothing is given away.
   if (t.startDate <= today && today <= t.endDate) return today;
   return matches.length ? dayKey(matches[0].start, tz) : t.startDate;
 }
 
 export function SpoilerApp() {
-  const [league, setLeague] = useState<LeagueSlug | null>("worlds");
+  const [league, setLeague] = useState<LeagueSlug | null>(null);
   const [tournaments, setTournaments] = useState<Load<Tournament[]>>({ status: "loading" });
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [matches, setMatches] = useState<Load<Match[]>>({ status: "loading" });
@@ -44,6 +47,12 @@ export function SpoilerApp() {
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   // TODO: let people pick their own zone
   const tz = "Europe/Belgrade";
+
+  useEffect(() => {
+    const saved = store.league();
+    setLeague(LEAGUES.some((l) => l.slug === saved) ? (saved as LeagueSlug) : "worlds");
+    setRevealed(store.revealed());
+  }, []);
 
   useEffect(() => {
     if (!league) return;
@@ -56,9 +65,10 @@ export function SpoilerApp() {
         if (cancelled) return;
         if (!list.length) throw new Error("No tournaments have started for this event yet");
         const today = todayKey(tz);
+        const saved = list.find((t) => t.id === store.tournament(league));
         const current = list.find((t) => t.startDate <= today && today <= t.endDate);
         setTournaments({ status: "ready", data: list });
-        setTournamentId((current ?? list[0]).id);
+        setTournamentId((saved ?? current ?? list[0]).id);
       })
       .catch((e: Error) => !cancelled && setTournaments({ status: "error", message: e.message }));
     return () => {
@@ -87,11 +97,13 @@ export function SpoilerApp() {
 
   const chooseLeague = (slug: LeagueSlug) => {
     if (slug === league) return;
+    store.setLeague(slug);
     setLeague(slug);
   };
 
   const chooseTournament = (id: string) => {
     if (!league) return;
+    store.setTournament(league, id);
     setTournamentId(id);
   };
 
@@ -100,6 +112,7 @@ export function SpoilerApp() {
   const goTo = useCallback(
     (d: string) => {
       if (!tournament || d > todayKey(tz)) return;
+      store.setDay(tournament.id, d);
       setDay(d);
     },
     [tournament, tz],
@@ -110,6 +123,7 @@ export function SpoilerApp() {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      store.setRevealed(next);
       return next;
     });
   };
