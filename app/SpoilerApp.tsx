@@ -258,15 +258,16 @@ function Logo({ team, size }: { team: Team | null; size: number }) {
 }
 
 function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () => void }) {
+  const concealed = m.teamsConcealed;
   const side = (i: 0 | 1) => {
-    const t = m.teams[i];
+    const t = concealed ? null : m.teams[i];
     const lost = m.revealed && m.result?.winner !== i;
     return (
       <div className={`team${i === 1 ? " team-r" : ""}${lost ? " team-lost" : ""}`}>
         <Logo team={t} size={40} />
         <div className="team-text">
           <span className="team-name">{t ? t.name : "TBD"}</span>
-          <span className="team-code">{t.code}</span>
+          <span className="team-code">{t ? t.code : "Hidden for now"}</span>
         </div>
       </div>
     );
@@ -297,7 +298,9 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
       </div>
       {side(1)}
       <div className="act">
-        {m.state === "inProgress" ? (
+        {concealed ? (
+          <span className="hint">Reveal the earlier match first</span>
+        ) : m.state === "inProgress" ? (
           <span className="badge-live">Live</span>
         ) : m.state === "unstarted" ? (
           <span className="hint">Not played yet</span>

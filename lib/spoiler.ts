@@ -31,6 +31,8 @@ export function isTableBlock(block: string) {
 export const isTbd = (t: Team) => t.code === "TBD";
 
 export type DayMatch = Match & {
+  /** Teams stay hidden: showing them would reveal the winner of an earlier, unrevealed match today. */
+  teamsConcealed: boolean;
   revealed: boolean;
 };
 
@@ -46,7 +48,15 @@ export type DayView = {
 export function buildDay(all: Match[], day: string, revealed: Set<string>, tz: string): DayView {
   const days = [...new Set(all.map((m) => dayKey(m.start, tz)))].sort();
   const todays = all.filter((m) => dayKey(m.start, tz) === day);
-  const matches: DayMatch[] = todays.map((m) => ({ ...m, revealed: m.state === "completed" && revealed.has(m.id) }));
+
+  const matches: DayMatch[] = [];
+  for (const m of todays) {
+    const codes = m.teams.filter((t) => !isTbd(t)).map((t) => t.code);
+    const teamsConcealed = matches.some(
+      (earlier) => !earlier.revealed && earlier.teams.some((t) => codes.includes(t.code)),
+    );
+    matches.push({ ...m, teamsConcealed, revealed: m.state === "completed" && revealed.has(m.id) && !teamsConcealed });
+  }
 
   const counted = [
     ...all.filter((m) => dayKey(m.start, tz) < day && m.result),
@@ -81,7 +91,7 @@ export function buildStandings(all: Match[], view: DayView, day: string, tz: str
     if (isTableBlock(m.block) && dayKey(m.start, tz) < day) m.teams.forEach(add);
   }
   for (const m of view.matches) {
-    if (isTableBlock(m.block)) m.teams.forEach(add);
+    if (isTableBlock(m.block) && !m.teamsConcealed) m.teams.forEach(add);
   }
 
   const swiss = all.some((m) => /swiss/i.test(m.block));
