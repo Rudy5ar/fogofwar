@@ -73,6 +73,7 @@ ol {
 
 .main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 24px;
   align-items: start;
   max-width: 1200px;
@@ -240,4 +241,40 @@ ol {
   display: block;
   height: 100%;
   background: var(--accent);
+}
+
+.side {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.note {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.table-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.c-num,
+.c-status {
+  text-align: right;
 }

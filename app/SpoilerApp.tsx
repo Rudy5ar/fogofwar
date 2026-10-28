@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LEAGUES } from "@/lib/leagues";
 import {
   buildDay,
+  buildStandings,
   dayKey,
   todayKey,
   type DayMatch,
@@ -114,6 +115,10 @@ export function SpoilerApp() {
   };
 
   const view = useMemo(() => (all && day ? buildDay(all, day, revealed, tz) : null), [all, day, revealed, tz]);
+  const standings = useMemo(
+    () => (all && view && day ? buildStandings(all, view, day, tz) : []),
+    [all, view, day, tz],
+  );
 
   const error = tournaments.status === "error" ? tournaments.message : matches.status === "error" ? matches.message : null;
   const today = todayKey(tz);
@@ -217,6 +222,14 @@ export function SpoilerApp() {
                 </>
               )}
             </section>
+
+            <aside className="side" aria-label="Standings and bracket">
+              <p className="note">
+                As of {shortDate(day)}, before the day&rsquo;s matches
+                {revealedCount > 0 ? `, plus ${revealedCount} revealed` : ""}
+              </p>
+              <Standings rows={standings} />
+            </aside>
           </>
         )}
       </main>
@@ -285,5 +298,47 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
         )}
       </div>
     </li>
+  );
+}
+
+function Standings({ rows }: { rows: ReturnType<typeof buildStandings> }) {
+  if (!rows.length) return <p className="side-empty">No group or league matches have been played by this day.</p>;
+  return (
+    <table className="table">
+      <thead>
+        <tr>
+          <th scope="col" className="c-rank">
+            #
+          </th>
+          <th scope="col">Team</th>
+          <th scope="col" className="c-num">
+            W–L
+          </th>
+          <th scope="col" className="c-status">
+            <span className="sr-only">Status</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.team.code} className={r.status === "eliminated" ? "row-out" : ""}>
+            <td className="c-rank">{r.rank}</td>
+            <td>
+              <span className="table-team">
+                <Logo team={r.team} size={22} />
+                {r.team.name}
+              </span>
+            </td>
+            <td className="c-num">
+              {r.wins}–{r.losses}
+            </td>
+            <td className="c-status">
+              {r.status === "qualified" && <span className="tag tag-in">Qualified</span>}
+              {r.status === "eliminated" && <span className="tag tag-out">Out</span>}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
