@@ -31,6 +31,18 @@ function tournamentName(slug: string) {
     .join(" ");
 }
 
+// A few teams come back in all caps ("BILIBILI GAMING"); short acronyms like "LYON" or "CTBC" stay as they are.
+const NAME_OVERRIDES: Record<string, string> = { GIANTX: "GiantX" };
+
+function teamName(name: string) {
+  if (NAME_OVERRIDES[name]) return NAME_OVERRIDES[name];
+  if (name !== name.toUpperCase()) return name;
+  return name
+    .split(" ")
+    .map((w) => (w.length > 4 ? w[0] + w.slice(1).toLowerCase() : w))
+    .join(" ");
+}
+
 type RawTournament = { id: string; slug: string; startDate: string; endDate: string };
 
 export async function getTournaments(leagueId: string): Promise<Tournament[]> {
@@ -56,7 +68,7 @@ function toMatch(e: RawEvent): Match | null {
   const raw = e.match.teams;
   // Deliberately drop `record`: it is the team's W-L today, which would spoil any earlier day.
   const teams = raw.map(
-    (t): Team => ({ code: t.code, name: t.name, image: t.image.replace(/^http:/, "https:") }),
+    (t): Team => ({ code: t.code, name: teamName(t.name), image: t.image.replace(/^http:/, "https:") }),
   ) as [Team, Team];
   let result: Match["result"] = null;
   if (e.state === "completed" && raw[0].result && raw[1].result) {
