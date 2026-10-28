@@ -250,6 +250,24 @@ ol {
   background: #fff;
 }
 
+.side-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.side-tabs button {
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.side-tabs button[aria-selected="true"] {
+  border-bottom: 2px solid var(--accent);
+  font-weight: 600;
+}
+
 .note {
   margin-bottom: 8px;
   color: var(--muted);
@@ -277,4 +295,46 @@ ol {
 .c-num,
 .c-status {
   text-align: right;
+}
+
+.bracket {
+  display: grid;
+  gap: 16px;
+}
+
+.bracket-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.slot {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.slot-today {
+  border-color: var(--accent);
+}
+
+.slot-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.slot-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slot-name {
+  flex: 1;
+}
+
+.slot-lost {
+  opacity: 0.5;
 }

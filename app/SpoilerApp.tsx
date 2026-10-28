@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LEAGUES } from "@/lib/leagues";
 import {
+  buildBracket,
   buildDay,
   buildStandings,
   dayKey,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/spoiler";
 import { store } from "@/lib/storage";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
+import { Bracket } from "./Bracket";
 import { Icon } from "./Icon";
 
 type Load<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
@@ -29,6 +31,8 @@ const shortDate = (day: string) =>
 const time = (iso: string, tz: string) =>
   new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz });
 
+type Panel = "standings" | "bracket";
+
 function pickDay(t: Tournament, matches: Match[], tz: string) {
   const today = todayKey(tz);
   const saved = store.day(t.id);
@@ -45,6 +49,7 @@ export function SpoilerApp() {
   const [matches, setMatches] = useState<Load<Match[]>>({ status: "loading" });
   const [day, setDay] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const [panel, setPanel] = useState<Panel>("standings");
   // TODO: let people pick their own zone
   const tz = "Europe/Belgrade";
 
@@ -133,6 +138,7 @@ export function SpoilerApp() {
     () => (all && view && day ? buildStandings(all, view, day, tz) : []),
     [all, view, day, tz],
   );
+  const bracket = useMemo(() => (all && view && day ? buildBracket(all, view, day, tz) : []), [all, view, day, tz]);
 
   const error = tournaments.status === "error" ? tournaments.message : matches.status === "error" ? matches.message : null;
   const today = todayKey(tz);
@@ -238,11 +244,28 @@ export function SpoilerApp() {
             </section>
 
             <aside className="side" aria-label="Standings and bracket">
+              <div className="side-tabs" role="tablist">
+                <button type="button" role="tab" aria-selected={panel === "standings"} onClick={() => setPanel("standings")}>
+                  Standings
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panel === "bracket"}
+                  onClick={() => setPanel("bracket")}
+                >
+                  Bracket
+                </button>
+              </div>
               <p className="note">
                 As of {shortDate(day)}, before the day&rsquo;s matches
                 {revealedCount > 0 ? `, plus ${revealedCount} revealed` : ""}
               </p>
-              <Standings rows={standings} />
+              {panel === "standings" ? (
+                <Standings rows={standings} />
+              ) : (
+                <Bracket columns={bracket} formatDay={shortDate} />
+              )}
             </aside>
           </>
         )}

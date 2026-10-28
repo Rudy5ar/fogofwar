@@ -113,3 +113,41 @@ export function buildStandings(all: Match[], view: DayView, day: string, tz: str
   });
   return sorted;
 }
+
+export type BracketSlot = {
+  id: string;
+  /** null for matches after the chosen day: they render as TBD with no date. */
+  day: string | null;
+  teams: [Team | null, Team | null];
+  result: Match["result"];
+  bestOf: number;
+  isToday: boolean;
+};
+
+export type BracketColumn = { block: string; slots: BracketSlot[] };
+
+export function buildBracket(all: Match[], view: DayView, day: string, tz: string): BracketColumn[] {
+  const todayById = new Map(view.matches.map((m) => [m.id, m]));
+  const columns: BracketColumn[] = [];
+
+  for (const m of all) {
+    if (isTableBlock(m.block)) continue;
+    let col = columns.find((c) => c.block === m.block);
+    if (!col) columns.push((col = { block: m.block, slots: [] }));
+
+    const d = dayKey(m.start, tz);
+    const today = todayById.get(m.id);
+    const show = (t: Team) => (isTbd(t) ? null : t);
+    let slot: BracketSlot;
+    if (d < day) {
+      slot = { id: m.id, day: d, teams: [show(m.teams[0]), show(m.teams[1])], result: m.result, bestOf: m.bestOf, isToday: false };
+    } else if (today) {
+      const teams: BracketSlot["teams"] = today.teamsConcealed ? [null, null] : [show(m.teams[0]), show(m.teams[1])];
+      slot = { id: m.id, day: d, teams, result: today.revealed ? m.result : null, bestOf: m.bestOf, isToday: true };
+    } else {
+      slot = { id: m.id, day: null, teams: [null, null], result: null, bestOf: m.bestOf, isToday: false };
+    }
+    col.slots.push(slot);
+  }
+  return columns;
+}
