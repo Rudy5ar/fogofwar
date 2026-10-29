@@ -1,5 +1,8 @@
 import type { Match, Team } from "./types";
 
+// A broadcast day runs past midnight (an NA-hosted Worlds ends around 04:00 in Europe), so a day starts at 06:00 local.
+const DAY_START_HOUR = 6;
+
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
 function calendarDay(d: Date, tz: string) {
@@ -12,9 +15,15 @@ function calendarDay(d: Date, tz: string) {
   return f.format(d);
 }
 
-/** The day a timestamp falls on in the given time zone, as YYYY-MM-DD. */
+/** The broadcast day a timestamp belongs to in the chosen time zone, as YYYY-MM-DD. */
 export function dayKey(iso: string | Date, tz: string) {
-  return calendarDay(typeof iso === "string" ? new Date(iso) : iso, tz);
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  return calendarDay(new Date(d.getTime() - DAY_START_HOUR * 3_600_000), tz);
+}
+
+/** True for a match that is on the chosen day's broadcast but after midnight. */
+export function isAfterMidnight(iso: string, tz: string) {
+  return calendarDay(new Date(iso), tz) !== dayKey(iso, tz);
 }
 
 export function todayKey(tz: string) {

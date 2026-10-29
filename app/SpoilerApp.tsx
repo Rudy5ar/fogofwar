@@ -7,6 +7,7 @@ import {
   buildDay,
   buildStandings,
   dayKey,
+  isAfterMidnight,
   todayKey,
   type DayMatch,
 } from "@/lib/spoiler";
@@ -301,6 +302,11 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
       <div className="meta">
         <span className="meta-time">
           {time(m.start, tz)}
+          {isAfterMidnight(m.start, tz) && (
+            <span className="meta-next">
+              {new Date(m.start).toLocaleDateString("en-GB", { weekday: "short", timeZone: tz })}
+            </span>
+          )}
         </span>
         <span className="meta-format">Bo{m.bestOf}</span>
       </div>
