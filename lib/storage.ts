@@ -26,6 +26,9 @@ export const store = {
   day: (tournament: string) => read(`sf:day:${tournament}`),
   setDay: (tournament: string, day: string) => write(`sf:day:${tournament}`, day),
 
+  timeZone: () => read("sf:timezone"),
+  setTimeZone: (tz: string) => write("sf:timezone", tz),
+
   revealed(): Set<string> {
     try {
       return new Set(JSON.parse(read("sf:revealed") ?? "[]") as string[]);

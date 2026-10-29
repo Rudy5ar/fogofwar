@@ -15,6 +15,7 @@ import { store } from "@/lib/storage";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
 import { Bracket } from "./Bracket";
 import { Icon } from "./Icon";
+import { DEFAULT_TIME_ZONE, TimeZoneSelect } from "./TimeZoneSelect";
 
 type Load<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
 
@@ -51,10 +52,11 @@ export function SpoilerApp() {
   const [day, setDay] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [panel, setPanel] = useState<Panel>("standings");
-  // TODO: let people pick their own zone
-  const tz = "Europe/Belgrade";
+  const [tz, setTz] = useState(DEFAULT_TIME_ZONE);
 
   useEffect(() => {
+    const savedTz = store.timeZone();
+    if (savedTz) setTz(savedTz);
     const saved = store.league();
     setLeague(LEAGUES.some((l) => l.slug === saved) ? (saved as LeagueSlug) : "worlds");
     setRevealed(store.revealed());
@@ -124,6 +126,11 @@ export function SpoilerApp() {
     [tournament, tz],
   );
 
+  const chooseTimeZone = (next: string) => {
+    store.setTimeZone(next);
+    setTz(next);
+  };
+
   const toggleReveal = (id: string) => {
     setRevealed((prev) => {
       const next = new Set(prev);
@@ -182,6 +189,7 @@ export function SpoilerApp() {
               </button>
             ))}
           </nav>
+          <TimeZoneSelect value={tz} onChange={chooseTimeZone} />
         </div>
       </header>
 
