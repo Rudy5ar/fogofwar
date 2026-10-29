@@ -16,6 +16,7 @@ import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
 import { Bracket } from "./Bracket";
 import { Icon } from "./Icon";
 import { DEFAULT_TIME_ZONE, TimeZoneSelect } from "./TimeZoneSelect";
+import { WatchedPicker, type MatchDay } from "./WatchedPicker";
 
 type Load<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
 
@@ -52,6 +53,8 @@ export function SpoilerApp() {
   const [day, setDay] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [panel, setPanel] = useState<Panel>("standings");
+  // "open": asked automatically when the site opens; "manual": the user pressed the calendar button.
+  const [asking, setAsking] = useState<"open" | "manual" | null>(null);
   const [tz, setTz] = useState(DEFAULT_TIME_ZONE);
 
   useEffect(() => {
@@ -96,6 +99,7 @@ export function SpoilerApp() {
         if (cancelled) return;
         setMatches({ status: "ready", data: list });
         setDay(pickDay(tournament, list, tz));
+        setAsking(store.askedRecently(tournament.id) ? null : "open");
       })
       .catch((e: Error) => !cancelled && setMatches({ status: "error", message: e.message }));
     return () => {
@@ -126,6 +130,16 @@ export function SpoilerApp() {
     [tournament, tz],
   );
 
+  const pickWatched = (watched: string | null) => {
+    if (!tournament || !all) return;
+    const days = [...new Set(all.map((m) => dayKey(m.start, tz)))].sort();
+    const today = todayKey(tz);
+    const next = watched ? days.find((d) => d > watched && d <= today) ?? watched : days[0] ?? tournament.startDate;
+    store.setAsked(tournament.id);
+    goTo(next);
+    setAsking(null);
+  };
+
   const chooseTimeZone = (next: string) => {
     store.setTimeZone(next);
     setTz(next);
@@ -153,6 +167,16 @@ export function SpoilerApp() {
   const nextDay = view?.nextDay && view.nextDay <= today ? view.nextDay : null;
   const revealedCount = view?.matches.filter((m) => m.revealed).length ?? 0;
   const blocks = view ? [...new Set(view.matches.map((m) => m.block))] : [];
+
+  const matchDays = useMemo<MatchDay[]>(() => {
+    if (!all) return [];
+    const byDay = new Map<string, Set<string>>();
+    for (const m of all) {
+      const d = dayKey(m.start, tz);
+      if (d <= today) byDay.set(d, (byDay.get(d) ?? new Set()).add(m.block));
+    }
+    return [...byDay].sort(([a], [b]) => b.localeCompare(a)).map(([day, b]) => ({ day, blocks: [...b] }));
+  }, [all, today, tz]);
 
   const tournamentSelect = tournament && (
     <label className="select">
@@ -200,6 +224,15 @@ export function SpoilerApp() {
           </p>
         ) : !view || !day || !tournament ? (
           <p>Loading…</p>
+        ) : asking ? (
+          <WatchedPicker
+            tournament={tournament}
+            tournamentSelect={tournamentSelect}
+            days={matchDays}
+            lastViewed={store.day(tournament.id)}
+            onPick={pickWatched}
+            onCancel={asking === "manual" ? () => setAsking(null) : null}
+          />
         ) : (
           <>
             <section className="day-col" aria-labelledby="day-title">
@@ -212,6 +245,15 @@ export function SpoilerApp() {
                   </div>
                 </div>
                 <div className="step">
+                  <button
+                    type="button"
+                    className="btn icon"
+                    aria-label="Change the last day you watched"
+                    title="Change the last day you watched"
+                    onClick={() => setAsking("manual")}
+                  >
+                    <Icon name="calendar" size={16} />
+                  </button>
                   <button
                     type="button"
                     className="btn icon"
