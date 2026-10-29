@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 
 export const DEFAULT_TIME_ZONE = "Europe/Belgrade";
@@ -25,13 +26,22 @@ function offset(tz: string) {
   const part = new Intl.DateTimeFormat("en-GB", { timeZone: tz, timeZoneName: "shortOffset" })
     .formatToParts(new Date())
     .find((p) => p.type === "timeZoneName");
-  return (part?.value ?? "GMT").replace("GMT", "UTC");
+  // ICU builds disagree on zero ("GMT" vs "GMT+0"), so normalise it.
+  const raw = part?.value ?? "GMT";
+  return raw === "GMT" ? "UTC+0" : raw.replace("GMT", "UTC");
 }
 
 export function TimeZoneSelect({ value, onChange }: { value: string; onChange: (tz: string) => void }) {
+  // Device zone and offsets are read after mount: the server's clock and ICU aren't the visitor's,
+  // and option text that differs between the two breaks hydration.
+  const [device, setDevice] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setDevice(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setMounted(true);
+  }, []);
   const zones = [...ZONES];
-  const device = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  if (!zones.some((z) => z.id === device)) zones.push({ id: device, label: "This device" });
+  if (device && !zones.some((z) => z.id === device)) zones.push({ id: device, label: "This device" });
   if (!zones.some((z) => z.id === value)) zones.push({ id: value, label: value });
 
   return (
@@ -40,7 +50,7 @@ export function TimeZoneSelect({ value, onChange }: { value: string; onChange: (
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         {zones.map((z) => (
           <option key={z.id} value={z.id}>
-            {`${z.label} (${offset(z.id)})`}
+            {mounted ? `${z.label} (${offset(z.id)})` : z.label}
           </option>
         ))}
       </select>
