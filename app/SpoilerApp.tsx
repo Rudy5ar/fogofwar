@@ -175,6 +175,7 @@ export function SpoilerApp() {
   const error = tournaments.status === "error" ? tournaments.message : matches.status === "error" ? matches.message : null;
   const today = todayKey(tz);
   const nextDay = view?.nextDay && view.nextDay <= today ? view.nextDay : null;
+  const revealable = view?.matches.filter((m) => m.state === "completed" && !m.teamsConcealed) ?? [];
   const revealedCount = view?.matches.filter((m) => m.revealed).length ?? 0;
   const blocks = view ? [...new Set(view.matches.map((m) => m.block))] : [];
 
@@ -230,11 +231,15 @@ export function SpoilerApp() {
 
       <main className="main">
         {error ? (
-          <p className="notice" role="alert">
-            {error}
-          </p>
+          <div className="notice" role="alert">
+            <p className="notice-title">{error}</p>
+            <p>Check your connection and try again. Nothing about results is shown while the schedule is unavailable.</p>
+            <button type="button" className="btn" onClick={() => location.reload()}>
+              Try again
+            </button>
+          </div>
         ) : !view || !day || !tournament ? (
-          <p>Loading…</p>
+          <Loading />
         ) : asking ? (
           <WatchedPicker
             tournament={tournament}
@@ -282,7 +287,14 @@ export function SpoilerApp() {
               </div>
 
               {view.matches.length === 0 ? (
-                <p className="empty">No matches on this day.</p>
+                <div className="empty">
+                  <p className="empty-title">No matches on this day</p>
+                  <p>
+                    {nextDay
+                      ? `The next match day is ${longDate(nextDay)}.`
+                      : "There are no later match days to move to yet."}
+                  </p>
+                </div>
               ) : (
                 <>
                   <div className="progress">
@@ -301,6 +313,11 @@ export function SpoilerApp() {
                       <MatchRow key={m.id} m={m} tz={tz} onToggle={() => toggleReveal(m.id)} />
                     ))}
                   </ol>
+                  {revealable.length > 0 && revealedCount === revealable.length && nextDay && (
+                    <p className="day-done">
+                      All results for this day are revealed. Move on when you&rsquo;ve watched the next day&rsquo;s games.
+                    </p>
+                  )}
                 </>
               )}
             </section>
@@ -447,5 +464,22 @@ function Standings({ rows }: { rows: ReturnType<typeof buildStandings> }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+function Loading() {
+  return (
+    <div className="loading" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading schedule</span>
+      <div className="day-col">
+        <div className="sk sk-title" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="sk sk-row" />
+        ))}
+      </div>
+      <div className="side">
+        <div className="sk sk-table" />
+      </div>
+    </div>
   );
 }

@@ -500,6 +500,12 @@ ol {
   font: 700 20px/1.2 var(--font-display);
 }
 
+.day-done {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 /* Side panel */
 
 .side {
@@ -673,6 +679,35 @@ ol {
 
 .slot-lost {
   color: var(--dim);
+}
+
+/* Loading */
+
+.sk {
+  border-radius: var(--radius);
+  background: var(--panel);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.sk-title {
+  width: 340px;
+  height: 64px;
+  margin-bottom: 20px;
+}
+
+.sk-row {
+  height: 96px;
+  margin-bottom: 8px;
+}
+
+.sk-table {
+  height: 420px;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
 }
 
 /* "Last day watched" question */
