@@ -198,6 +198,7 @@ export function SpoilerApp() {
       <header className="top">
         <div className="top-inner">
           <span className="mark">
+            <Icon name="eye-off" size={22} />
             Spoiler-free
           </span>
           <nav className="tabs" aria-label="Events">
