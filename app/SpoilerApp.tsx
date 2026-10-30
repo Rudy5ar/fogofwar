@@ -8,8 +8,10 @@ import {
   buildStandings,
   dayKey,
   isAfterMidnight,
+  isTableBlock,
   todayKey,
   type DayMatch,
+  type DayView,
 } from "@/lib/spoiler";
 import { store } from "@/lib/storage";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
@@ -35,6 +37,11 @@ const time = (iso: string, tz: string) =>
   new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz });
 
 type Panel = "standings" | "bracket";
+
+/** Open on the bracket on a playoff day, the standings otherwise. */
+function defaultPanel(view: DayView): Panel {
+  return view.matches.length > 0 && view.matches.every((m) => !isTableBlock(m.block)) ? "bracket" : "standings";
+}
 
 function pickDay(t: Tournament, matches: Match[], tz: string) {
   const today = todayKey(tz);
@@ -98,7 +105,9 @@ export function SpoilerApp() {
       .then(({ matches: list }) => {
         if (cancelled) return;
         setMatches({ status: "ready", data: list });
-        setDay(pickDay(tournament, list, tz));
+        const d = pickDay(tournament, list, tz);
+        setDay(d);
+        setPanel(defaultPanel(buildDay(list, d, new Set(), tz)));
         setAsking(store.askedRecently(tournament.id) ? null : "open");
       })
       .catch((e: Error) => !cancelled && setMatches({ status: "error", message: e.message }));
@@ -137,6 +146,7 @@ export function SpoilerApp() {
     const next = watched ? days.find((d) => d > watched && d <= today) ?? watched : days[0] ?? tournament.startDate;
     store.setAsked(tournament.id);
     goTo(next);
+    setPanel(defaultPanel(buildDay(all, next, revealed, tz)));
     setAsking(null);
   };
 
