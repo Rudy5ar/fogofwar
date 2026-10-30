@@ -756,6 +756,174 @@ ol {
   margin-top: 20px;
 }
 
+/* Smaller screens */
+
+@media (max-width: 1100px) {
+  .main,
+  .loading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --gutter: 16px;
+  }
+
+  .top-inner {
+    height: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 12px;
+  }
+
+  .tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .tz {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: 180px;
+  }
+
+  .tz select {
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+
+  .mark {
+    height: 52px;
+  }
+
+  .tabs {
+    height: 44px;
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 0 4px;
+  }
+
+  .tab {
+    padding: 0 10px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  .main {
+    padding-top: 20px;
+    gap: 24px;
+  }
+
+  .day-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .day-head h1 {
+    font-size: 24px;
+  }
+
+  .step .btn:last-child {
+    flex: 1;
+  }
+
+  .match {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas:
+      "meta meta meta"
+      "a score b"
+      "act act act";
+    gap: 12px 8px;
+    padding: 14px 16px;
+  }
+
+  .meta {
+    grid-area: meta;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .meta-time {
+    font-size: 18px;
+  }
+
+  .team {
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .team:nth-child(2) {
+    grid-area: a;
+  }
+
+  .team-r {
+    grid-area: b;
+  }
+
+  .team-text {
+    align-items: center;
+    max-width: 100%;
+  }
+
+  .team-name {
+    font-size: 14px;
+  }
+
+  .score {
+    grid-area: score;
+  }
+
+  .score-value {
+    font-size: 30px;
+  }
+
+  .act {
+    grid-area: act;
+    justify-content: stretch;
+  }
+
+  .act .btn {
+    width: 100%;
+  }
+
+  .hint {
+    width: 100%;
+    text-align: center;
+  }
+
+  .side {
+    padding: 16px;
+  }
+
+  .picker {
+    padding-top: 4px;
+  }
+
+  .picker-head h1 {
+    font-size: 26px;
+  }
+
+  .picker-days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .picker-foot .btn {
+    flex: 1;
+  }
+
+  .empty,
+  .notice {
+    padding: 28px 20px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
