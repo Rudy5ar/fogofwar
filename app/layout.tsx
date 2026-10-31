@@ -6,9 +6,9 @@ const barlow = Barlow({ subsets: ["latin"], weight: ["400", "500", "600", "700"]
 const condensed = Barlow_Semi_Condensed({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: "Spoiler-free",
+  title: "Fog of War · spoiler-free LoL esports",
   description: "LoL esports schedules and standings as of the day you're watching.",
-  appleWebApp: { capable: true, title: "Spoiler-free", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Fog of War", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = { themeColor: "#0a0e1a", width: "device-width", initialScale: 1 };

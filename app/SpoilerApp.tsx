@@ -218,7 +218,10 @@ export function SpoilerApp() {
         <div className="top-inner">
           <span className="mark">
             <Icon name="eye-off" size={22} />
-            Spoiler-free
+            <span className="mark-text">
+              Fog of War
+              <span className="mark-sub">Spoiler-free LoL esports</span>
+            </span>
           </span>
           <nav className="tabs" aria-label="Events">
             {LEAGUES.map((l) => (

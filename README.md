@@ -1,4 +1,4 @@
-# lol-spoilerfree
+# Fog of War
 
 Small app I made for myself. I watch LoL esports a day or two late and just wanted the schedule,
 standings and brackets without getting spoiled. Nothing more to it.
