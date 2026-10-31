@@ -10,6 +10,7 @@ This one only uses matches up to the day you pick.
 - reveal them as you watch, standings and bracket follow along
 - if a team plays twice that day, the second match stays hidden until you reveal the first
 - nothing from later days shows up anywhere
+- Swiss gets its own board, grouped by record
 
 Worlds, MSI, First Stand, LEC, LCK, LPL, LCS. No accounts, it just saves stuff in localStorage.
 

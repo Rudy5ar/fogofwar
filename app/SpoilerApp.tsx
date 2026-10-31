@@ -6,8 +6,10 @@ import {
   buildBracket,
   buildDay,
   buildStandings,
+  buildSwiss,
   dayKey,
   isAfterMidnight,
+  isSwissBlock,
   isTableBlock,
   todayKey,
   type DayMatch,
@@ -17,6 +19,7 @@ import { store } from "@/lib/storage";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
 import { Bracket } from "./Bracket";
 import { Icon } from "./Icon";
+import { SwissBoard } from "./SwissBoard";
 import { DEFAULT_TIME_ZONE, TimeZoneSelect } from "./TimeZoneSelect";
 import { WatchedPicker, type MatchDay } from "./WatchedPicker";
 
@@ -171,12 +174,17 @@ export function SpoilerApp() {
     [all, view, day, tz],
   );
   const bracket = useMemo(() => (all && view && day ? buildBracket(all, view, day, tz) : []), [all, view, day, tz]);
+  const swiss = useMemo(() => (all && view && day ? buildSwiss(all, view, day, tz) : null), [all, view, day, tz]);
+  const swissDay = view?.matches.some((m) => isSwissBlock(m.block)) ?? false;
 
   const error = tournaments.status === "error" ? tournaments.message : matches.status === "error" ? matches.message : null;
   const today = todayKey(tz);
   const nextDay = view?.nextDay && view.nextDay <= today ? view.nextDay : null;
   const revealable = view?.matches.filter((m) => m.state === "completed" && !m.teamsConcealed) ?? [];
   const revealedCount = view?.matches.filter((m) => m.revealed).length ?? 0;
+  const asOf = day
+    ? `As of ${shortDate(day)}, before the day’s matches${revealedCount > 0 ? `, plus ${revealedCount} revealed` : ""}`
+    : "";
   const blocks = view ? [...new Set(view.matches.map((m) => m.block))] : [];
 
   const matchDays = useMemo<MatchDay[]>(() => {
@@ -322,30 +330,44 @@ export function SpoilerApp() {
               )}
             </section>
 
-            <aside className="side" aria-label="Standings and bracket">
-              <div className="side-tabs" role="tablist">
-                <button type="button" role="tab" aria-selected={panel === "standings"} onClick={() => setPanel("standings")}>
-                  Standings
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === "bracket"}
-                  onClick={() => setPanel("bracket")}
-                >
-                  Bracket
-                </button>
-              </div>
-              <p className="note">
-                As of {shortDate(day)}, before the day&rsquo;s matches
-                {revealedCount > 0 ? `, plus ${revealedCount} revealed` : ""}
-              </p>
-              {panel === "standings" ? (
-                <Standings rows={standings} />
-              ) : (
-                <Bracket columns={bracket} formatDay={shortDate} />
-              )}
-            </aside>
+            {swiss?.started && (
+              <details key={`${tournament.id}-${swissDay}`} className="swiss" open={swissDay}>
+                <summary>
+                  <h2>Swiss stage</h2>
+                  <span className="swiss-asof">{asOf}</span>
+                  <Icon name="chevron-down" size={18} />
+                </summary>
+                <SwissBoard swiss={swiss} scrollKey={day} />
+                <p className="swiss-foot">
+                  {swiss.pending > 0 &&
+                    `${swiss.pending === 1 ? "1 more match" : `${swiss.pending} more matches`} today will be placed once the earlier results are revealed. `}
+                </p>
+              </details>
+            )}
+
+            <div className="side-wrap">
+              <aside className="side" aria-label="Standings and bracket">
+                <div className="side-tabs" role="tablist">
+                  <button type="button" role="tab" aria-selected={panel === "standings"} onClick={() => setPanel("standings")}>
+                    Standings
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={panel === "bracket"}
+                    onClick={() => setPanel("bracket")}
+                  >
+                    Bracket
+                  </button>
+                </div>
+                <p className="note">{asOf}</p>
+                {panel === "standings" ? (
+                  <Standings rows={standings} />
+                ) : (
+                  <Bracket columns={bracket} formatDay={shortDate} />
+                )}
+              </aside>
+            </div>
           </>
         )}
       </main>

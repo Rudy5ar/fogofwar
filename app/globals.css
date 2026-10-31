@@ -60,12 +60,16 @@ button {
 
 h1,
 h2,
+h3,
+h4,
 p,
-ol {
+ol,
+ul {
   margin: 0;
 }
 
-ol {
+ol,
+ul {
   padding: 0;
   list-style: none;
 }
@@ -681,6 +685,257 @@ ol {
   color: var(--dim);
 }
 
+/* Swiss stage */
+
+.day-col {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.side-wrap {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+}
+
+.swiss {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding: 0 20px;
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.swiss summary {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.swiss summary::-webkit-details-marker {
+  display: none;
+}
+
+.swiss summary h2 {
+  font: 700 22px/1 var(--font-display);
+}
+
+.swiss-asof {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.swiss summary svg {
+  align-self: center;
+  margin-left: auto;
+  color: var(--muted);
+  transition: transform 0.2s ease-out;
+}
+
+.swiss[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.swiss-foot {
+  padding: 4px 0 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sw-scroll {
+  margin: 0 -20px;
+  padding: 2px 20px 16px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 20px;
+}
+
+.sw-board {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 168px;
+  column-gap: 40px;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.sw-col {
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+.sw-round {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font: 700 12px/1 var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sw-stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+
+.sw-box {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.sw-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--panel-2);
+}
+
+.sw-record {
+  font: 700 15px/1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.sw-bo {
+  color: var(--dim);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.sw-squares {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.sw-squares i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.sw-sq-win {
+  background: var(--teal);
+}
+
+.sw-sq-loss {
+  background: var(--red);
+}
+
+.sw-verdict {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sw-in .sw-verdict {
+  color: var(--teal);
+}
+
+.sw-out .sw-verdict {
+  color: var(--dim);
+}
+
+.sw-cards {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+}
+
+.sw-teams {
+  gap: 0;
+  padding: 2px 0;
+}
+
+.sw-card {
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.sw-card.is-today {
+  border-color: rgba(200, 170, 110, 0.55);
+}
+
+.sw-card.is-open {
+  border-color: var(--line-soft);
+  background: none;
+}
+
+.sw-team {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: 600 13px/1 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.2s ease-out, background-color 0.15s ease-out;
+}
+
+.sw-team:focus-visible {
+  outline-offset: -2px;
+}
+
+.sw-card .sw-team + .sw-team {
+  border-top: 1px solid var(--line-soft);
+}
+
+.sw-code {
+  flex: 1;
+}
+
+.sw-score {
+  font: 700 16px/1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The winner's marker, as on lolesports.com. */
+.sw-won::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--gold);
+}
+
+.sw-lost,
+.sw-out .sw-team {
+  color: var(--dim);
+}
+
+.sw-lost .logo,
+.sw-out .logo {
+  opacity: 0.55;
+}
+
+.sw-team-tbd {
+  color: var(--dim);
+  cursor: default;
+}
+
 /* Loading */
 
 .sk {
@@ -802,11 +1057,38 @@ ol {
   .side {
     position: static;
   }
+
+  .day-col,
+  .side-wrap,
+  .swiss {
+    grid-column: auto;
+    grid-row: auto;
+  }
 }
 
 @media (max-width: 760px) {
   :root {
     --gutter: 16px;
+  }
+
+  .swiss {
+    padding: 0 16px;
+  }
+
+  .sw-scroll {
+    margin: 0 -16px;
+    padding: 2px 16px 16px;
+    scroll-padding-left: 16px;
+  }
+
+  .sw-board {
+    grid-auto-columns: 152px;
+    column-gap: 32px;
+  }
+
+  .swiss summary {
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
 
   .top-inner {
