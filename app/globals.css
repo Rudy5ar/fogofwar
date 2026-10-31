@@ -486,17 +486,6 @@ ul {
   justify-items: start;
 }
 
-.badge-live {
-  padding: 4px 10px;
-  border-radius: 4px;
-  background: rgba(229, 72, 77, 0.16);
-  color: #ff8589;
-  font-weight: 700;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
 .empty-title,
 .notice-title {
   margin-bottom: 4px;

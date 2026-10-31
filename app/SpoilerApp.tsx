@@ -430,10 +430,9 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
       <div className="act">
         {concealed ? (
           <span className="hint">Reveal the earlier match first</span>
-        ) : m.state === "inProgress" ? (
-          <span className="badge-live">Live</span>
-        ) : m.state === "unstarted" ? (
-          <span className="hint">Not played yet</span>
+        ) : m.state !== "completed" ? (
+          // Live and upcoming look the same: a live badge, with the VOD length, hints at the game count.
+          <span className="hint">No result yet</span>
         ) : m.revealed ? (
           <button type="button" className="btn ghost" onClick={onToggle}>
             Hide result
