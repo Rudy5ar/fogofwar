@@ -341,6 +341,7 @@ export function SpoilerApp() {
                 <p className="swiss-foot">
                   {swiss.pending > 0 &&
                     `${swiss.pending === 1 ? "1 more match" : `${swiss.pending} more matches`} today will be placed once the earlier results are revealed. `}
+                  Hover or tap a team to trace its path.
                 </p>
               </details>
             )}
