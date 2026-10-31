@@ -45,7 +45,7 @@ export function TimeZoneSelect({ value, onChange }: { value: string; onChange: (
   if (!zones.some((z) => z.id === value)) zones.push({ id: value, label: value });
 
   return (
-    <label className="select tz" title="Time zone for match times and days">
+    <label className="select tz" title="Time zone">
       <span className="sr-only">Time zone</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         {zones.map((z) => (

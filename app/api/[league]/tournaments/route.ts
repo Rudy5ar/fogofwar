@@ -10,6 +10,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ league: string
     const tournaments = (await getTournaments(league.id)).filter((t) => t.startDate <= today);
     return NextResponse.json({ tournaments });
   } catch {
-    return NextResponse.json({ error: "Couldn't reach the LoL Esports API" }, { status: 502 });
+    return NextResponse.json({ error: "Couldn’t load the schedule" }, { status: 502 });
   }
 }

@@ -177,8 +177,6 @@ export type SwissView = {
   columns: SwissColumn[];
   /** False until the first Swiss match is on or before the chosen day. */
   started: boolean;
-  /** Today's matches that can't be placed yet: their pool would give away an unrevealed result. */
-  pending: number;
 };
 
 const choose = (n: number, k: number) => {
@@ -224,14 +222,14 @@ export function buildSwiss(all: Match[], view: DayView, day: string, tz: string)
     return r;
   };
   const pools = new Map<string, BracketSlot[]>();
-  let pending = 0;
+  let started = false;
 
   for (const m of swissMatches) {
     const d = dayKey(m.start, tz);
     if (d > day) continue;
     const today = todayById.get(m.id);
     if (m.teams.some(isTbd) || today?.teamsConcealed) {
-      if (today) pending++;
+      if (today) started = true;
       continue;
     }
     const [a, b] = [record(m.teams[0]), record(m.teams[1])];
@@ -263,5 +261,5 @@ export function buildSwiss(all: Match[], view: DayView, day: string, tz: string)
     }
     if (boxes.length) columns.push({ games, boxes });
   }
-  return { columns, started: pools.size > 0 || pending > 0, pending };
+  return { columns, started: started || pools.size > 0 };
 }

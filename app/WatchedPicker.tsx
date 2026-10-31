@@ -25,10 +25,6 @@ export function WatchedPicker({
     <section className="picker" aria-labelledby="picker-title">
       <div className="picker-head">
         <h1 id="picker-title">What&rsquo;s the last day you watched?</h1>
-        <p>
-          The app opens on the match day after it, with standings up to that point. Results stay hidden until you
-          reveal them.
-        </p>
         <div className="picker-tournament">{tournamentSelect}</div>
       </div>
 
@@ -50,7 +46,7 @@ export function WatchedPicker({
 
       <div className="picker-foot">
         <button type="button" className="btn" onClick={() => onPick(null)}>
-          Nothing yet, start from the first day
+          Start from day one
         </button>
         {onCancel && (
           <button type="button" className="btn ghost" onClick={onCancel}>

@@ -32,7 +32,7 @@ function Slot({ s, formatDay }: { s: BracketSlot; formatDay: (day: string) => st
 }
 
 export function Bracket({ columns, formatDay }: { columns: BracketColumn[]; formatDay: (day: string) => string }) {
-  if (!columns.length) return <p className="side-empty">This tournament has no bracket stage.</p>;
+  if (!columns.length) return <p className="side-empty">No playoff bracket.</p>;
   return (
     <div className="bracket">
       {columns.map((col) => (

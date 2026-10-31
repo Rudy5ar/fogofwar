@@ -505,12 +505,6 @@ ul {
   font: 700 20px/1.2 var(--font-display);
 }
 
-.day-done {
-  margin-top: 16px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
 /* Side panel */
 
 .side {
@@ -738,12 +732,6 @@ ul {
 
 .swiss[open] summary svg {
   transform: rotate(180deg);
-}
-
-.swiss-foot {
-  padding: 4px 0 18px;
-  color: var(--muted);
-  font-size: 13px;
 }
 
 .sw-scroll {
@@ -1019,13 +1007,6 @@ ul {
 .picker-head h1 {
   font: 700 32px/1.1 var(--font-display);
   text-wrap: balance;
-}
-
-.picker-head p {
-  max-width: 60ch;
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 15px;
 }
 
 .picker-tournament {

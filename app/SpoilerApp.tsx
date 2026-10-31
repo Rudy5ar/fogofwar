@@ -28,7 +28,7 @@ type Load<T> = { status: "loading" } | { status: "error"; message: string } | { 
 async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error ?? "Something went wrong loading the schedule");
+  if (!res.ok) throw new Error(body.error ?? "Couldn’t load the schedule");
   return body as T;
 }
 
@@ -84,7 +84,7 @@ export function SpoilerApp() {
     getJson<{ tournaments: Tournament[] }>(`/api/${league}/tournaments`)
       .then(({ tournaments: list }) => {
         if (cancelled) return;
-        if (!list.length) throw new Error("No tournaments have started for this event yet");
+        if (!list.length) throw new Error("Nothing’s been played yet");
         const today = todayKey(tz);
         const saved = list.find((t) => t.id === store.tournament(league));
         const current = list.find((t) => t.startDate <= today && today <= t.endDate);
@@ -180,10 +180,9 @@ export function SpoilerApp() {
   const error = tournaments.status === "error" ? tournaments.message : matches.status === "error" ? matches.message : null;
   const today = todayKey(tz);
   const nextDay = view?.nextDay && view.nextDay <= today ? view.nextDay : null;
-  const revealable = view?.matches.filter((m) => m.state === "completed" && !m.teamsConcealed) ?? [];
   const revealedCount = view?.matches.filter((m) => m.revealed).length ?? 0;
   const asOf = day
-    ? `As of ${shortDate(day)}, before the day’s matches${revealedCount > 0 ? `, plus ${revealedCount} revealed` : ""}`
+    ? `As of ${shortDate(day)}${revealedCount > 0 ? ` · ${revealedCount} revealed` : ""}`
     : "";
   const blocks = view ? [...new Set(view.matches.map((m) => m.block))] : [];
 
@@ -244,7 +243,6 @@ export function SpoilerApp() {
         {error ? (
           <div className="notice" role="alert">
             <p className="notice-title">{error}</p>
-            <p>Check your connection and try again. Nothing about results is shown while the schedule is unavailable.</p>
             <button type="button" className="btn" onClick={() => location.reload()}>
               Try again
             </button>
@@ -275,8 +273,8 @@ export function SpoilerApp() {
                   <button
                     type="button"
                     className="btn icon"
-                    aria-label="Change the last day you watched"
-                    title="Change the last day you watched"
+                    aria-label="Change day"
+                    title="Change day"
                     onClick={() => setAsking("manual")}
                   >
                     <Icon name="calendar" size={16} />
@@ -291,7 +289,7 @@ export function SpoilerApp() {
                     <Icon name="chevron-left" size={16} />
                   </button>
                   <button type="button" className="btn" disabled={!nextDay} onClick={() => nextDay && goTo(nextDay)}>
-                    {nextDay ? `Next day: ${shortDate(nextDay)}` : "No later days yet"}
+                    {nextDay ? `Next day: ${shortDate(nextDay)}` : "Next day"}
                     <Icon name="chevron-right" size={16} />
                   </button>
                 </div>
@@ -299,12 +297,8 @@ export function SpoilerApp() {
 
               {view.matches.length === 0 ? (
                 <div className="empty">
-                  <p className="empty-title">No matches on this day</p>
-                  <p>
-                    {nextDay
-                      ? `The next match day is ${longDate(nextDay)}.`
-                      : "There are no later match days to move to yet."}
-                  </p>
+                  <p className="empty-title">No matches</p>
+                  {nextDay && <p>Next match day: {longDate(nextDay)}</p>}
                 </div>
               ) : (
                 <>
@@ -313,7 +307,7 @@ export function SpoilerApp() {
                       <b>
                         {revealedCount} of {view.matches.length}
                       </b>{" "}
-                      results revealed
+                      revealed
                     </span>
                     <span className="bar" aria-hidden="true">
                       <i style={{ width: `${(revealedCount / view.matches.length) * 100}%` }} />
@@ -324,11 +318,6 @@ export function SpoilerApp() {
                       <MatchRow key={m.id} m={m} tz={tz} onToggle={() => toggleReveal(m.id)} />
                     ))}
                   </ol>
-                  {revealable.length > 0 && revealedCount === revealable.length && nextDay && (
-                    <p className="day-done">
-                      All results for this day are revealed. Move on when you&rsquo;ve watched the next day&rsquo;s games.
-                    </p>
-                  )}
                 </>
               )}
             </section>
@@ -341,11 +330,6 @@ export function SpoilerApp() {
                   <Icon name="chevron-down" size={18} />
                 </summary>
                 <SwissBoard swiss={swiss} scrollKey={day} />
-                <p className="swiss-foot">
-                  {swiss.pending > 0 &&
-                    `${swiss.pending === 1 ? "1 more match" : `${swiss.pending} more matches`} today will be placed once the earlier results are revealed. `}
-                  Hover or tap a team to trace its path.
-                </p>
               </details>
             )}
 
@@ -395,7 +379,7 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
         <Logo team={t} size={40} />
         <div className="team-text">
           <span className="team-name">{t ? t.name : "TBD"}</span>
-          <span className="team-code">{t ? t.code : "Hidden for now"}</span>
+          <span className="team-code">{t?.code}</span>
         </div>
       </div>
     );
@@ -432,7 +416,7 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
       {side(1)}
       <div className="act">
         {concealed ? (
-          <span className="hint">Reveal the earlier match first</span>
+          <span className="hint">Reveal the earlier match</span>
         ) : m.state !== "completed" ? (
           // Live and upcoming look the same: a live badge, with the VOD length, hints at the game count.
           <span className="hint">No result yet</span>
@@ -451,7 +435,7 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
 }
 
 function Standings({ rows }: { rows: ReturnType<typeof buildStandings> }) {
-  if (!rows.length) return <p className="side-empty">No group or league matches have been played by this day.</p>;
+  if (!rows.length) return <p className="side-empty">No games played yet.</p>;
   return (
     <table className="table">
       <thead>
