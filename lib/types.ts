@@ -1,4 +1,6 @@
 export type LeagueSlug = "worlds" | "msi" | "first_stand" | "lec" | "lck" | "lpl" | "lcs";
+/** The real leagues, plus the made-up one behind ?demo. */
+export type BoardLeague = LeagueSlug | "demo";
 
 export type Team = {
   code: string;

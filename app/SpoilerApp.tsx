@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { demoMatches, demoTournaments } from "@/lib/demo";
 import { LEAGUES } from "@/lib/leagues";
 import {
   buildBracket,
@@ -18,13 +19,24 @@ import {
   type Stage,
 } from "@/lib/spoiler";
 import { store } from "@/lib/storage";
-import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
+import type { BoardLeague, LeagueSlug, Match, Team, Tournament } from "@/lib/types";
 import { Icon } from "./Icon";
 import { StageBoard } from "./StageBoard";
 import { DEFAULT_TIME_ZONE, deviceTimeZone, TimeZoneSelect } from "./TimeZoneSelect";
 import { WatchedPicker, type MatchDay } from "./WatchedPicker";
 
 type Load<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
+
+// The demo league never touches the API: its tournaments are generated for the visitor's time zone.
+const loadTournaments = (league: BoardLeague, tz: string) =>
+  league === "demo"
+    ? Promise.resolve(demoTournaments(tz))
+    : getJson<{ tournaments: Tournament[] }>(`/api/${league}/tournaments`).then((r) => r.tournaments);
+
+const loadMatches = (league: BoardLeague, id: string, tz: string) =>
+  league === "demo"
+    ? Promise.resolve(demoMatches(id, tz))
+    : getJson<{ matches: Match[] }>(`/api/${league}/${id}`).then((r) => r.matches);
 
 async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -59,7 +71,8 @@ function pickDay(t: Tournament, matches: Match[], tz: string) {
 }
 
 export function SpoilerApp() {
-  const [league, setLeague] = useState<LeagueSlug | null>(null);
+  const [league, setLeague] = useState<BoardLeague | null>(null);
+  const [demo, setDemo] = useState(false);
   const [tournaments, setTournaments] = useState<Load<Tournament[]>>({ status: "loading" });
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [matches, setMatches] = useState<Load<Match[]>>({ status: "loading" });
@@ -76,7 +89,9 @@ export function SpoilerApp() {
   useEffect(() => {
     setTz(store.timeZone() ?? deviceTimeZone());
     const saved = store.league();
-    setLeague(LEAGUES.some((l) => l.slug === saved) ? (saved as LeagueSlug) : "worlds");
+    const isDemo = new URLSearchParams(location.search).has("demo");
+    setDemo(isDemo);
+    setLeague(isDemo ? "demo" : LEAGUES.some((l) => l.slug === saved) ? (saved as LeagueSlug) : "worlds");
     setRevealed(store.revealed());
   }, []);
 
@@ -86,8 +101,8 @@ export function SpoilerApp() {
     setTournaments({ status: "loading" });
     setMatches({ status: "loading" });
     setDay(null);
-    getJson<{ tournaments: Tournament[] }>(`/api/${league}/tournaments`)
-      .then(({ tournaments: list }) => {
+    loadTournaments(league, tz)
+      .then((list) => {
         if (cancelled) return;
         if (!list.length) throw new Error("Nothing’s been played yet");
         const today = todayKey(tz);
@@ -102,6 +117,11 @@ export function SpoilerApp() {
     };
   }, [league]);
 
+  // On a phone the event tabs scroll sideways; keep the chosen one in view.
+  useEffect(() => {
+    document.querySelector(".tabs [aria-current='page']")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [league]);
+
   const tournament = tournaments.status === "ready" ? tournaments.data.find((t) => t.id === tournamentId) : undefined;
 
   useEffect(() => {
@@ -109,8 +129,8 @@ export function SpoilerApp() {
     let cancelled = false;
     setMatches({ status: "loading" });
     setDay(null);
-    getJson<{ matches: Match[] }>(`/api/${league}/${tournament.id}`)
-      .then(({ matches: list }) => {
+    loadMatches(league, tournament.id, tz)
+      .then((list) => {
         if (cancelled) return;
         setMatches({ status: "ready", data: list });
         setDay(pickDay(tournament, list, tz));
@@ -124,9 +144,9 @@ export function SpoilerApp() {
     };
   }, [league, tournament]);
 
-  const chooseLeague = (slug: LeagueSlug) => {
+  const chooseLeague = (slug: BoardLeague) => {
     if (slug === league) return;
-    store.setLeague(slug);
+    if (slug !== "demo") store.setLeague(slug);
     setLeague(slug);
   };
 
@@ -174,8 +194,8 @@ export function SpoilerApp() {
       });
       // Fetch again so the peek shows the score as it is now, not as it was when the page loaded.
       if (!peeked.has(id) && league && tournament) {
-        getJson<{ matches: Match[] }>(`/api/${league}/${tournament.id}`)
-          .then(({ matches: list }) => setMatches({ status: "ready", data: list }))
+        loadMatches(league, tournament.id, tz)
+          .then((list) => setMatches({ status: "ready", data: list }))
           .catch(() => {});
       }
       return;
@@ -261,7 +281,7 @@ export function SpoilerApp() {
             </span>
           </span>
           <nav className="tabs" aria-label="Events">
-            {LEAGUES.map((l) => (
+            {[...LEAGUES, ...(demo ? [{ slug: "demo" as const, name: "Demo" }] : [])].map((l) => (
               <button
                 key={l.slug}
                 type="button"

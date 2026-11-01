@@ -30,7 +30,7 @@ export function todayKey(tz: string) {
   return dayKey(new Date(), tz);
 }
 
-const addDays = (day: string, n: number) =>
+export const addDays = (day: string, n: number) =>
   new Date(Date.parse(`${day}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
 /** Every calendar day from the first match day to the last, including days without matches. */
