@@ -1262,3 +1262,18 @@ ul {
     transition: none !important;
   }
 }
+
+/* Footer */
+
+.foot {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 40px;
+}
+
+.foot p {
+  max-width: 760px;
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.5;
+}

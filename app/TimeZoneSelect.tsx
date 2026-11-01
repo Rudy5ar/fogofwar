@@ -1,25 +1,52 @@
 import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 
-export const DEFAULT_TIME_ZONE = "Europe/Belgrade";
+// Only used before the page has mounted; visitors start on their device's zone.
+export const DEFAULT_TIME_ZONE = "UTC";
+
+// Older ICU builds still report these zones by their former names.
+const ALIASES: Record<string, string> = {
+  "Asia/Calcutta": "Asia/Kolkata",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+};
+
+export function deviceTimeZone() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return ALIASES[tz] ?? (tz || DEFAULT_TIME_ZONE);
+  } catch {
+    return DEFAULT_TIME_ZONE;
+  }
+}
 
 const ZONES: { id: string; label: string }[] = [
   { id: "Europe/Belgrade", label: "Serbia" },
   { id: "Europe/London", label: "UK & Ireland" },
   { id: "Europe/Paris", label: "Central Europe" },
   { id: "Europe/Athens", label: "Eastern Europe" },
+  { id: "Europe/Istanbul", label: "Turkey" },
   { id: "Europe/Moscow", label: "Moscow" },
+  { id: "Asia/Dubai", label: "Gulf" },
+  { id: "Asia/Kolkata", label: "India" },
   { id: "America/New_York", label: "US Eastern" },
   { id: "America/Chicago", label: "US Central" },
   { id: "America/Denver", label: "US Mountain" },
   { id: "America/Los_Angeles", label: "US Pacific" },
+  { id: "America/Mexico_City", label: "Mexico" },
   { id: "America/Sao_Paulo", label: "Brazil" },
+  { id: "America/Argentina/Buenos_Aires", label: "Argentina" },
   { id: "Asia/Seoul", label: "Korea" },
   { id: "Asia/Shanghai", label: "China" },
   { id: "Asia/Taipei", label: "Taiwan" },
   { id: "Asia/Ho_Chi_Minh", label: "Vietnam" },
+  { id: "Asia/Bangkok", label: "Thailand" },
+  { id: "Asia/Jakarta", label: "Indonesia" },
+  { id: "Asia/Singapore", label: "Singapore & Philippines" },
   { id: "Asia/Tokyo", label: "Japan" },
   { id: "Australia/Sydney", label: "Sydney" },
+  { id: "Pacific/Auckland", label: "New Zealand" },
+  { id: "UTC", label: "UTC" },
 ];
 
 function offset(tz: string) {
@@ -37,7 +64,7 @@ export function TimeZoneSelect({ value, onChange }: { value: string; onChange: (
   const [device, setDevice] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setDevice(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setDevice(deviceTimeZone());
     setMounted(true);
   }, []);
   const zones = [...ZONES];

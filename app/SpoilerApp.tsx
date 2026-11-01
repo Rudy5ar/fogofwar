@@ -21,7 +21,7 @@ import { store } from "@/lib/storage";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
 import { Icon } from "./Icon";
 import { StageBoard } from "./StageBoard";
-import { DEFAULT_TIME_ZONE, TimeZoneSelect } from "./TimeZoneSelect";
+import { DEFAULT_TIME_ZONE, deviceTimeZone, TimeZoneSelect } from "./TimeZoneSelect";
 import { WatchedPicker, type MatchDay } from "./WatchedPicker";
 
 type Load<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
@@ -74,8 +74,7 @@ export function SpoilerApp() {
   const [tz, setTz] = useState(DEFAULT_TIME_ZONE);
 
   useEffect(() => {
-    const savedTz = store.timeZone();
-    if (savedTz) setTz(savedTz);
+    setTz(store.timeZone() ?? deviceTimeZone());
     const saved = store.league();
     setLeague(LEAGUES.some((l) => l.slug === saved) ? (saved as LeagueSlug) : "worlds");
     setRevealed(store.revealed());
@@ -395,6 +394,14 @@ export function SpoilerApp() {
           </>
         )}
       </main>
+
+      <footer className="foot">
+        <p>
+          Fog of War isn&rsquo;t endorsed by Riot Games and doesn&rsquo;t reflect the views or opinions of Riot Games or
+          anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated
+          properties are trademarks or registered trademarks of Riot Games, Inc.
+        </p>
+      </footer>
     </>
   );
 }
