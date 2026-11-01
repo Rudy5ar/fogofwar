@@ -421,6 +421,7 @@ export function SpoilerApp() {
           anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated
           properties are trademarks or registered trademarks of Riot Games, Inc.
         </p>
+        <p>Visits are counted anonymously with Vercel Web Analytics. No cookies, no ads.</p>
       </footer>
     </>
   );

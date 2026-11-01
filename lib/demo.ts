@@ -1,49 +1,38 @@
 import { addDays, todayKey } from "./spoiler";
 import type { Match, MatchResult, Team, Tournament } from "./types";
 
-// Made-up tournaments with fictional teams, for trying the app and taking screenshots without spoiling
-// anything real. Opened with ?demo. Same format as Worlds: a double-elimination play-in, a 16-team Swiss
-// stage and an 8-team knockout. "Live" runs up to today's last Swiss round; "Finished" ended weeks ago.
+// Made-up tournaments with the real Worlds teams, for trying the app and taking screenshots without spoiling
+// anything: the schedule and every result are invented. Opened with ?demo. Same format as Worlds: a
+// double-elimination play-in, a 16-team Swiss stage and an 8-team knockout. "Live" runs up to today's last
+// Swiss round; "Finished" ended weeks ago.
 
-const TEAMS: [code: string, name: string, color: string][] = [
-  ["AUR", "Aurora Vanguard", "#4cc9f0"],
-  ["BSK", "Basalt Kings", "#e76f51"],
-  ["CBH", "Cobalt Herons", "#4361ee"],
-  ["DSK", "Duskfall", "#9d4edd"],
-  ["EMB", "Ember Lotus", "#f4a261"],
-  ["FRL", "Frostline", "#90e0ef"],
-  ["GLO", "Gilded Owls", "#e9c46a"],
-  ["HAL", "Halcyon Esports", "#2a9d8f"],
-  ["IRV", "Ironvale", "#adb5bd"],
-  ["JCM", "Jade Comets", "#52b788"],
-  ["KES", "Kestrel Gaming", "#d62828"],
-  ["LMR", "Lumen Rift", "#ffd166"],
-  ["MON", "Monsoon", "#118ab2"],
-  ["NJR", "Nightjar", "#6c757d"],
-  ["ONX", "Onyx Tide", "#3a86ff"],
+const LOGOS = "https://static.lolesports.com/teams/";
+
+// Roughly strongest first: ratings fall with the index, so the invented results stay plausible.
+const TEAMS: [code: string, name: string, logo: string][] = [
+  ["GEN", "Gen.G Esports", "1773829250929_GENGLOGO_GOLD.png"],
+  ["HLE", "Hanwha Life Esports", "1631819564399_hle-2021-worlds.png"],
+  ["BLG", "Bilibili Gaming", "1682322954525_Bilibili_Gaming_logo_20211.png"],
+  ["T1", "T1", "1726801573959_539px-T1_2019_full_allmode.png"],
+  ["TES", "TOP Esports", "1592592064571_TopEsportsTES-01-FullonDark.png"],
+  ["AL", "Anyone's Legend", "1641199582689_.png"],
+  ["DK", "Dplus KIA", "1673260049703_DPlusKIALOGO11.png"],
+  ["IG", "Invictus Gaming", "1634762917340_300px-Invictus_Gaming_logo.png"],
+  ["G2", "G2 Esports", "G2-FullonDark.png"],
+  ["MKOI", "Movistar KOI", "1734012609283_MKOI_FullColor_Blue.png"],
+  ["TLAW", "Team Liquid Alienware", "1769357207762_TLAlienware_Minimal_Bug-White.png"],
+  ["CFO", "CTBC Flying Oyster", "1656307849320_CFO_Logo.png"],
+  ["LYON", "LYON", "1743717443673_isotypelyon-03.png"],
+  ["LOS", "LOS", "1784013312149_LOS-OLaranja.png"],
+  ["TSW", "Team Secret Whales", "1774598000328_White_EyeText_600p.png"],
   // The last four start in the play-in.
-  ["PLR", "Polaris Five", "#c77dff"],
-  ["QZR", "Quartz Ravens", "#ff70a6"],
-  ["SLT", "Saltmarsh Sirens", "#06d6a0"],
-  ["TDB", "Tidebreak", "#ef476f"],
+  ["KC", "Karmine Corp", "1704714951336_KC.png"],
+  ["C9", "Cloud9 Kia", "1736924120254_C9Kia_IconBlue_Transparent_2000x2000.png"],
+  ["FUR", "Furia", "FURIA---black.png"],
+  ["MVK", "MVK Esports", "1767089709161_White_Logo.png"],
 ];
 
-const SHAPES = [
-  '<circle cx="32" cy="32" r="28"/>',
-  '<rect x="6" y="6" width="52" height="52" rx="14"/>',
-  '<path d="M32 4 56 13v19c0 14-10 23-24 28C18 55 8 46 8 32V13Z"/>',
-  '<path d="M32 4 58 19v26L32 60 6 45V19Z"/>',
-];
-
-function logo(i: number) {
-  const [code, , color] = TEAMS[i];
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="${color}">${SHAPES[i % SHAPES.length]}</g>` +
-    `<text x="32" y="41" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="24" fill="#0a0e1a">${code[0]}</text></svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
-
-const team = (i: number): Team => ({ code: TEAMS[i][0], name: TEAMS[i][1], image: logo(i) });
+const team = (i: number): Team => ({ code: TEAMS[i][0], name: TEAMS[i][1], image: LOGOS + TEAMS[i][2] });
 const TBD: Team = { code: "TBD", name: "TBD", image: "" };
 
 /** Small seeded generator, so every visit sees the same results. */
@@ -190,7 +179,8 @@ export function demoMatches(id: string, tz: string): Match[] {
           : "unstarted";
     const known = s.day <= t.today;
     return {
-      id: `${id}-${n}`,
+      // Bump the version when teams or results change, so reveals saved for older demo matches don't carry over.
+      id: `${id}-v2-${n}`,
       start: startIso,
       state,
       block: s.block,
