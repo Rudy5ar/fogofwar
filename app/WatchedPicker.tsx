@@ -15,7 +15,7 @@ export function WatchedPicker({
 }: {
   tournament: Tournament;
   tournamentSelect: React.ReactNode;
-  /** Match days up to today, newest first. Dates and stage names only: nothing here can spoil. */
+  /** Every day up to today, newest first, with its stages. Dates and stage names only: nothing here can spoil. */
   days: MatchDay[];
   lastViewed: string | null;
   onPick: (watched: string | null) => void;
@@ -36,7 +36,7 @@ export function WatchedPicker({
             <li key={day}>
               <button type="button" className="picker-day" onClick={() => onPick(day)}>
                 <span className="picker-date">{label(day)}</span>
-                <span className="picker-stage">{blocks.join(" · ")}</span>
+                <span className="picker-stage">{blocks.length ? blocks.join(" · ") : "No matches"}</span>
                 {day === lastViewed && <span className="picker-last">Last opened</span>}
               </button>
             </li>

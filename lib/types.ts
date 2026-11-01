@@ -21,6 +21,8 @@ export type Match = {
   teams: [Team, Team];
   /** Only set when the match is completed. Never contains the API's live W-L records. */
   result: MatchResult | null;
+  /** Game wins so far, only while the match is in progress. */
+  liveWins: [number, number] | null;
 };
 
 export type Tournament = {

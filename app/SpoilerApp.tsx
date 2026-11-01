@@ -9,17 +9,18 @@ import {
   buildSwiss,
   dayKey,
   isAfterMidnight,
-  isSwissBlock,
-  isTableBlock,
+  STAGES,
+  stageOf,
   todayKey,
+  tournamentDays,
   type DayMatch,
   type DayView,
+  type Stage,
 } from "@/lib/spoiler";
 import { store } from "@/lib/storage";
 import type { LeagueSlug, Match, Team, Tournament } from "@/lib/types";
-import { Bracket } from "./Bracket";
 import { Icon } from "./Icon";
-import { SwissBoard } from "./SwissBoard";
+import { StageBoard } from "./StageBoard";
 import { DEFAULT_TIME_ZONE, TimeZoneSelect } from "./TimeZoneSelect";
 import { WatchedPicker, type MatchDay } from "./WatchedPicker";
 
@@ -39,11 +40,13 @@ const shortDate = (day: string) =>
 const time = (iso: string, tz: string) =>
   new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz });
 
-type Panel = "standings" | "bracket";
-
-/** Open on the bracket on a playoff day, the standings otherwise. */
-function defaultPanel(view: DayView): Panel {
-  return view.matches.length > 0 && view.matches.every((m) => !isTableBlock(m.block)) ? "bracket" : "standings";
+/** The stage played on the chosen day, else the one whose draw is out, else the latest one already under way. */
+function stageForDay(all: Match[], view: DayView, day: string, tz: string): Stage | null {
+  const today = view.matches.map((m) => stageOf(m.block)).find((s) => s);
+  if (today) return today;
+  const drawn = all.find((m) => view.draw.has(m.id) && stageOf(m.block));
+  if (drawn) return stageOf(drawn.block);
+  return all.filter((m) => dayKey(m.start, tz) <= day).map((m) => stageOf(m.block)).filter((s) => s).at(-1) ?? null;
 }
 
 function pickDay(t: Tournament, matches: Match[], tz: string) {
@@ -62,7 +65,10 @@ export function SpoilerApp() {
   const [matches, setMatches] = useState<Load<Match[]>>({ status: "loading" });
   const [day, setDay] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
-  const [panel, setPanel] = useState<Panel>("standings");
+  // Matches peeked at before they finished. Not saved: a reload must not show the final score that came later.
+  const [peeked, setPeeked] = useState<Set<string>>(new Set());
+  // null follows the chosen day's stage.
+  const [stage, setStage] = useState<Stage | null>(null);
   // "open": asked automatically when the site opens; "manual": the user pressed the calendar button.
   const [asking, setAsking] = useState<"open" | "manual" | null>(null);
   const [tz, setTz] = useState(DEFAULT_TIME_ZONE);
@@ -108,9 +114,9 @@ export function SpoilerApp() {
       .then(({ matches: list }) => {
         if (cancelled) return;
         setMatches({ status: "ready", data: list });
-        const d = pickDay(tournament, list, tz);
-        setDay(d);
-        setPanel(defaultPanel(buildDay(list, d, new Set(), tz)));
+        setDay(pickDay(tournament, list, tz));
+        setStage(null);
+        setPeeked(new Set());
         setAsking(store.askedRecently(tournament.id) ? null : "open");
       })
       .catch((e: Error) => !cancelled && setMatches({ status: "error", message: e.message }));
@@ -138,6 +144,7 @@ export function SpoilerApp() {
       if (!tournament || d > todayKey(tz)) return;
       store.setDay(tournament.id, d);
       setDay(d);
+      setStage(null);
     },
     [tournament, tz],
   );
@@ -149,7 +156,6 @@ export function SpoilerApp() {
     const next = watched ? days.find((d) => d > watched && d <= today) ?? watched : days[0] ?? tournament.startDate;
     store.setAsked(tournament.id);
     goTo(next);
-    setPanel(defaultPanel(buildDay(all, next, revealed, tz)));
     setAsking(null);
   };
 
@@ -158,7 +164,29 @@ export function SpoilerApp() {
     setTz(next);
   };
 
-  const toggleReveal = (id: string) => {
+  const toggleReveal = (m: Match) => {
+    const { id } = m;
+    if (m.state !== "completed") {
+      setPeeked((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      // Fetch again so the peek shows the score as it is now, not as it was when the page loaded.
+      if (!peeked.has(id) && league && tournament) {
+        getJson<{ matches: Match[] }>(`/api/${league}/${tournament.id}`)
+          .then(({ matches: list }) => setMatches({ status: "ready", data: list }))
+          .catch(() => {});
+      }
+      return;
+    }
+    setPeeked((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     setRevealed((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -168,14 +196,22 @@ export function SpoilerApp() {
     });
   };
 
-  const view = useMemo(() => (all && day ? buildDay(all, day, revealed, tz) : null), [all, day, revealed, tz]);
+  const view = useMemo(
+    () => (all && day ? buildDay(all, day, new Set([...revealed, ...peeked]), tz) : null),
+    [all, day, revealed, peeked, tz],
+  );
   const standings = useMemo(
     () => (all && view && day ? buildStandings(all, view, day, tz) : []),
     [all, view, day, tz],
   );
-  const bracket = useMemo(() => (all && view && day ? buildBracket(all, view, day, tz) : []), [all, view, day, tz]);
-  const swiss = useMemo(() => (all && view && day ? buildSwiss(all, view, day, tz) : null), [all, view, day, tz]);
-  const swissDay = view?.matches.some((m) => isSwissBlock(m.block)) ?? false;
+  const stages = useMemo(() => STAGES.filter((s) => all?.some((m) => stageOf(m.block) === s.id)), [all]);
+  const activeStage =
+    stages.find((s) => s.id === stage)?.id ?? (all && view && day ? stageForDay(all, view, day, tz) : null) ?? stages[0]?.id;
+  const board = useMemo(() => {
+    if (!all || !view || !day || !activeStage) return null;
+    if (activeStage === "swiss") return buildSwiss(all, view, day, tz);
+    return buildBracket(all.filter((m) => stageOf(m.block) === activeStage), view, day, tz);
+  }, [all, view, day, tz, activeStage]);
 
   const error = tournaments.status === "error" ? tournaments.message : matches.status === "error" ? matches.message : null;
   const today = todayKey(tz);
@@ -191,9 +227,12 @@ export function SpoilerApp() {
     const byDay = new Map<string, Set<string>>();
     for (const m of all) {
       const d = dayKey(m.start, tz);
-      if (d <= today) byDay.set(d, (byDay.get(d) ?? new Set()).add(m.block));
+      byDay.set(d, (byDay.get(d) ?? new Set()).add(m.block));
     }
-    return [...byDay].sort(([a], [b]) => b.localeCompare(a)).map(([day, b]) => ({ day, blocks: [...b] }));
+    return tournamentDays(all, tz)
+      .filter((d) => d <= today)
+      .reverse()
+      .map((day) => ({ day, blocks: [...(byDay.get(day) ?? [])] }));
   }, [all, today, tz]);
 
   const tournamentSelect = tournament && (
@@ -282,7 +321,7 @@ export function SpoilerApp() {
                   <button
                     type="button"
                     className="btn icon"
-                    aria-label={view.prevDay ? `Previous day: ${shortDate(view.prevDay)}` : "No earlier match days"}
+                    aria-label={view.prevDay ? `Previous day: ${shortDate(view.prevDay)}` : "No earlier days"}
                     disabled={!view.prevDay}
                     onClick={() => view.prevDay && goTo(view.prevDay)}
                   >
@@ -298,7 +337,7 @@ export function SpoilerApp() {
               {view.matches.length === 0 ? (
                 <div className="empty">
                   <p className="empty-title">No matches</p>
-                  {nextDay && <p>Next match day: {longDate(nextDay)}</p>}
+                  {view.nextMatchDay && <p>Next match day: {longDate(view.nextMatchDay)}</p>}
                 </div>
               ) : (
                 <>
@@ -315,45 +354,42 @@ export function SpoilerApp() {
                   </div>
                   <ol className="matches">
                     {view.matches.map((m) => (
-                      <MatchRow key={m.id} m={m} tz={tz} onToggle={() => toggleReveal(m.id)} />
+                      <MatchRow key={m.id} m={m} tz={tz} onToggle={() => toggleReveal(m)} />
                     ))}
                   </ol>
                 </>
               )}
             </section>
 
-            {swiss?.started && (
-              <details key={`${tournament.id}-${swissDay}`} className="swiss" open={swissDay}>
-                <summary>
-                  <h2>Swiss stage</h2>
+            {board && activeStage && (
+              <section className="swiss" aria-label="Stages">
+                <div className="swiss-head">
+                  <div className="side-tabs stage-tabs" role="tablist">
+                    {stages.map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={st.id === activeStage}
+                        onClick={() => setStage(st.id)}
+                      >
+                        {st.name}
+                      </button>
+                    ))}
+                  </div>
                   <span className="swiss-asof">{asOf}</span>
-                  <Icon name="chevron-down" size={18} />
-                </summary>
-                <SwissBoard swiss={swiss} scrollKey={day} />
-              </details>
+                </div>
+                <StageBoard key={`${tournament.id}-${activeStage}`} board={board} scrollKey={`${day}-${activeStage}`} />
+              </section>
             )}
 
             <div className="side-wrap">
-              <aside className="side" aria-label="Standings and bracket">
-                <div className="side-tabs" role="tablist">
-                  <button type="button" role="tab" aria-selected={panel === "standings"} onClick={() => setPanel("standings")}>
-                    Standings
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={panel === "bracket"}
-                    onClick={() => setPanel("bracket")}
-                  >
-                    Bracket
-                  </button>
+              <aside className="side" aria-label="Standings">
+                <div className="side-tabs">
+                  <h2 className="side-title">Standings</h2>
                 </div>
                 <p className="note">{asOf}</p>
-                {panel === "standings" ? (
-                  <Standings rows={standings} />
-                ) : (
-                  <Bracket columns={bracket} formatDay={shortDate} />
-                )}
+                <Standings rows={standings} />
               </aside>
             </div>
           </>
@@ -406,6 +442,17 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
             <span className="score-dash">–</span>
             <span className={m.result.winner === 1 ? "" : "score-lost"}>{m.result.wins[1]}</span>
           </span>
+        ) : m.shown && m.liveWins ? (
+          <span className="score-live">
+            <span className="score-value" aria-label={`${m.liveWins[0]} to ${m.liveWins[1]}, in progress`}>
+              <span>{m.liveWins[0]}</span>
+              <span className="score-dash">–</span>
+              <span>{m.liveWins[1]}</span>
+            </span>
+            <span className="score-note">Live</span>
+          </span>
+        ) : m.shown ? (
+          <span className="score-locked score-pending">No result yet</span>
         ) : (
           <span className="score-locked">
             <Icon name="lock" size={14} />
@@ -417,10 +464,7 @@ function MatchRow({ m, tz, onToggle }: { m: DayMatch; tz: string; onToggle: () =
       <div className="act">
         {concealed ? (
           <span className="hint">Reveal the earlier match</span>
-        ) : m.state !== "completed" ? (
-          // Live and upcoming look the same: a live badge, with the VOD length, hints at the game count.
-          <span className="hint">No result yet</span>
-        ) : m.revealed ? (
+        ) : m.shown ? (
           <button type="button" className="btn ghost" onClick={onToggle}>
             Hide result
           </button>

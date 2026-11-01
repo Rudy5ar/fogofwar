@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { SWISS_TARGET, type BracketSlot, type SwissBox, type SwissView } from "@/lib/spoiler";
+import type { Board, BoardBox, BracketSlot } from "@/lib/spoiler";
 import type { Team } from "@/lib/types";
 
 type Focus = { focus: string | null; onHover: (code: string | null) => void; onPin: (code: string) => void };
@@ -82,17 +82,20 @@ function Card({ s, col, f }: { s: BracketSlot | null; col: number; f: Focus }) {
   );
 }
 
-function Box({ box, col, f }: { box: SwissBox; col: number; f: Focus }) {
-  const record = `${box.wins}–${box.losses}`;
+function Box({ box, col, rows, f }: { box: BoardBox; col: number; rows: boolean; f: Focus }) {
+  // On a bracket, upper and lower boxes keep their own row (the first grid row holds the round title).
+  const style = rows ? { gridRow: box.row + 2 } : undefined;
   if (box.kind === "pool") {
     const bo = box.slots[0]?.bestOf;
     return (
-      <section className="sw-box" aria-label={`${record} pool`}>
-        <h4 className="sw-head">
-          <span className="sw-record">{record}</span>
-          {bo && bo > 1 && <span className="sw-bo">Bo{bo}</span>}
-          <Squares wins={box.wins} losses={box.losses} />
-        </h4>
+      <section className="sw-box" style={style} aria-label={box.title ?? "Matches"}>
+        {(box.title || (bo && bo > 1)) && (
+          <h4 className="sw-head">
+            {box.title && <span className="sw-record">{box.title}</span>}
+            {bo && bo > 1 && <span className="sw-bo">Bo{bo}</span>}
+            {box.record && <Squares wins={box.record[0]} losses={box.record[1]} />}
+          </h4>
+        )}
         <ol className="sw-cards">
           {box.slots.map((s) => (
             <Card key={s.id} s={s} col={col} f={f} />
@@ -105,8 +108,9 @@ function Box({ box, col, f }: { box: SwissBox; col: number; f: Focus }) {
     );
   }
   const out = box.kind === "eliminated";
+  const record = `${box.record[0]}–${box.record[1]}`;
   return (
-    <section className={`sw-box sw-end${out ? " sw-out" : " sw-in"}`} aria-label={`${record} ${box.kind}`}>
+    <section className={`sw-box sw-end${out ? " sw-out" : " sw-in"}`} style={style} aria-label={`${record} ${box.kind}`}>
       <h4 className="sw-head">
         <span className="sw-record">{record}</span>
         <span className="sw-verdict">{out ? "Eliminated" : "Qualified"}</span>
@@ -147,23 +151,23 @@ function tracePath(board: HTMLElement, code: string) {
   return parts.join("");
 }
 
-export function SwissBoard({ swiss, scrollKey }: { swiss: SwissView; scrollKey: string }) {
+export function StageBoard({ board, scrollKey }: { board: Board; scrollKey: string }) {
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const [path, setPath] = useState("");
   const scroller = useRef<HTMLDivElement>(null);
-  const board = useRef<HTMLDivElement>(null);
+  const boardEl = useRef<HTMLDivElement>(null);
   const focus = hover ?? pinned;
 
   useLayoutEffect(() => {
-    const el = board.current;
+    const el = boardEl.current;
     if (!el || !focus) return setPath("");
     const draw = () => setPath(tracePath(el, focus));
     draw();
     const ro = new ResizeObserver(draw);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [focus, swiss]);
+  }, [focus, board]);
 
   // On a phone the board scrolls sideways: open it on the round being played on the chosen day.
   useEffect(() => {
@@ -179,6 +183,9 @@ export function SwissBoard({ swiss, scrollKey }: { swiss: SwissView; scrollKey: 
     return () => window.removeEventListener("keydown", onKey);
   }, [pinned]);
 
+  // A title row, then one row per bracket (upper, lower).
+  const rows = Math.max(0, ...board.columns.flatMap((c) => c.boxes.map((b) => b.row))) + 2;
+  const style = board.layout === "rows" ? { gridTemplateRows: `repeat(${rows}, auto)` } : undefined;
   const f: Focus = { focus, onHover: setHover, onPin: (code) => setPinned((p) => (p === code ? null : code)) };
 
   return (
@@ -187,13 +194,13 @@ export function SwissBoard({ swiss, scrollKey }: { swiss: SwissView; scrollKey: 
       ref={scroller}
       onClick={(e) => !(e.target as HTMLElement).closest(".sw-team") && setPinned(null)}
     >
-      <div className={`sw-board${focus ? " has-focus" : ""}`} ref={board}>
-        {swiss.columns.map((c) => (
-          <div key={c.games} className="sw-col">
-            <h3 className="sw-round">{c.games < SWISS_TARGET * 2 - 1 ? `Round ${c.games + 1}` : "Final records"}</h3>
+      <div className={`sw-board sw-${board.layout}${focus ? " has-focus" : ""}`} style={style} ref={boardEl}>
+        {board.columns.map((c) => (
+          <div key={c.col} className="sw-col">
+            <h3 className="sw-round">{c.title}</h3>
             <div className="sw-stack">
               {c.boxes.map((b) => (
-                <Box key={`${b.wins}-${b.losses}`} box={b} col={c.games} f={f} />
+                <Box key={`${b.kind}-${b.row}`} box={b} col={c.col} rows={board.layout === "rows"} f={f} />
               ))}
             </div>
           </div>

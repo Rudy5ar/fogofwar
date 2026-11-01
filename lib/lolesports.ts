@@ -6,17 +6,19 @@ import type { Match, Team, Tournament } from "./types";
 const API_KEY = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z";
 const BASE = "https://esports-api.lolesports.com/persisted/gw";
 const REVALIDATE_SECONDS = 300;
+// The schedule carries live game scores, so it is refreshed more often.
+const SCHEDULE_REVALIDATE_SECONDS = 60;
 const MAX_PAGES = 20;
 
 export function findLeague(slug: string) {
   return LEAGUES.find((l) => l.slug === slug);
 }
 
-async function gw<T>(path: string, params: Record<string, string>): Promise<T> {
+async function gw<T>(path: string, params: Record<string, string>, revalidate = REVALIDATE_SECONDS): Promise<T> {
   const query = new URLSearchParams({ hl: "en-US", ...params });
   const res = await fetch(`${BASE}/${path}?${query}`, {
     headers: { "x-api-key": API_KEY },
-    next: { revalidate: REVALIDATE_SECONDS },
+    next: { revalidate },
   });
   if (!res.ok) throw new Error(`LoL Esports API ${path} returned ${res.status}`);
   return res.json() as Promise<T>;
@@ -77,7 +79,9 @@ function toMatch(e: RawEvent): Match | null {
       winner: raw[0].result.outcome === "win" ? 0 : 1,
     };
   }
-  return { id: e.match.id, start: e.startTime, state: e.state, block: e.blockName, bestOf: e.match.strategy.count, teams, result };
+  const liveWins: Match["liveWins"] =
+    e.state === "inProgress" ? [raw[0].result?.gameWins ?? 0, raw[1].result?.gameWins ?? 0] : null;
+  return { id: e.match.id, start: e.startTime, state: e.state, block: e.blockName, bestOf: e.match.strategy.count, teams, result, liveWins };
 }
 
 /** All matches of one tournament. The schedule is paged newest-first, so walk older pages until we pass its start. */
@@ -90,7 +94,7 @@ export async function getTournamentMatches(leagueId: string, t: Tournament): Pro
   for (let page = 0; page < MAX_PAGES; page++) {
     const params: Record<string, string> = { leagueId };
     if (pageToken) params.pageToken = pageToken;
-    const data = await gw<RawSchedule>("getSchedule", params);
+    const data = await gw<RawSchedule>("getSchedule", params, SCHEDULE_REVALIDATE_SECONDS);
     const { events, pages } = data.data.schedule;
     for (const e of events) {
       const time = new Date(e.startTime).getTime();
